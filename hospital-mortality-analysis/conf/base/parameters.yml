@@ -1,0 +1,65 @@
+data_preparation:
+  # Column cleaning parameters
+  columns_to_remove_chars: ["ï»¿", ".", "-"]
+  column_replacements:
+    "-": "_"
+  
+  # Age categorization thresholds
+  age_categories:
+    child: 18
+    young: 40
+    adult: 65
+  
+  # Comorbidity column mapping
+  comorbidity_groups:
+    cardiopatia:
+      columns: ["CAD", "HEART FAILURE", "STABLE ANGINA", "ACS", "STEMI"]
+      binary_threshold: 0
+    
+    diabetes:
+      source_column: "DM"
+      binary_threshold: 0
+    
+    hipertension:
+      source_column: "HTN"
+      binary_threshold: 0
+    
+    insuf_renal:
+      source_column: "CKD"
+      binary_threshold: 0
+    
+    enf_cerebrovascular:
+      columns: ["CVA INFRACT", "CVA BLEED"]
+      binary_threshold: 0
+    
+    insuf_cardiaca:
+      source_column: "HEART FAILURE"
+      binary_threshold: 0
+
+  # Key column for merging
+  merge_key_column: "MRD"
+  
+  # Column standardization
+  key_column_mappings:
+    "MRD NO": "MRD"
+
+exploratory_analysis:
+  # Plot configuration
+  figure_size: [8, 5]
+  color_palettes:
+    default: "pastel"
+    outcome: "Set2"
+    age: "coolwarm"
+    diabetes: "magma"
+
+# Parámetros para regresión
+regression:
+  target_column: "DURATION OF INTENSIVE UNIT STAY"
+  test_size: 0.2
+  random_state: 42
+  
+  model_params:
+    n_estimators: 100
+    max_depth: 10
+    random_state: 42
+    n_jobs: -1

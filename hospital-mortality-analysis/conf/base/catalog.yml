@@ -1,0 +1,65 @@
+# Raw data inputs
+df1_raw:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/hospital_data_1.csv
+  load_args:
+    sep: ","
+    encoding: "latin-1"
+
+df2_raw:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/hospital_data_2.csv
+  load_args:
+    sep: ","
+    encoding: "latin-1"
+
+df3_raw:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/hospital_data_3.csv
+  load_args:
+    sep: ","
+    encoding: "latin-1"
+
+df4_raw:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/hospital_data_4.csv
+  load_args:
+    sep: ","
+    encoding: "latin-1"
+
+# Intermediate processed data
+cleaned_datasets:
+  type: pickle.PickleDataset  # ✅ Cambiado
+  filepath: data/02_intermediate/cleaned_datasets.pkl
+
+merged_dataset:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/merged_hospital_data.parquet
+
+# Primary processed data
+feature_engineered_dataset:
+  type: pandas.ParquetDataset
+  filepath: data/03_primary/hospital_data_features.parquet
+
+# Analysis outputs
+exploratory_plots:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/exploratory_analysis.png
+
+# Datos de entrada para clasificación y regresión
+train_data:
+  type: pandas.CSVDataset  # ✅ Cambiado
+  filepath: data/02_intermediate/train.csv
+
+test_data:
+  type: pandas.CSVDataset  # ✅ Cambiado
+  filepath: data/02_intermediate/test.csv
+
+# Outputs del pipeline de regresión
+regression_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/regression_model.pkl
+
+regression_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/regression_metrics.json

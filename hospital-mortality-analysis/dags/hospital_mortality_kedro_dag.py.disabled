@@ -1,0 +1,194 @@
+"""
+DAG de Airflow usando kedro-airflow para conversión automática
+Este enfoque convierte automáticamente nodos de Kedro en tareas de Airflow
+"""
+
+from datetime import datetime, timedelta
+from pathlib import Path
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+import sys
+
+# Agregar el path del proyecto al PYTHONPATH
+sys.path.insert(0, '/opt/airflow/src')
+
+# Importar componentes de Kedro
+from kedro.framework.session import KedroSession
+from kedro.framework.project import configure_project
+
+# Configurar proyecto Kedro
+project_path = Path('/opt/airflow')
+configure_project('hospital_mortality_analysis')
+
+
+def run_kedro_node(node_name, pipeline_name='data_preparation', **context):
+    """
+    Ejecuta un nodo específico de Kedro
+    
+    Args:
+        node_name: Nombre del nodo a ejecutar
+        pipeline_name: Nombre del pipeline
+        context: Contexto de Airflow
+    """
+    with KedroSession.create(
+        project_path=project_path,
+        env='local'
+    ) as session:
+        session.run(
+            pipeline_name=pipeline_name,
+            node_names=[node_name]
+        )
+        return f"✅ Nodo {node_name} ejecutado correctamente"
+
+
+def run_kedro_pipeline(pipeline_name='data_preparation', **context):
+    """
+    Ejecuta un pipeline completo de Kedro
+    
+    Args:
+        pipeline_name: Nombre del pipeline a ejecutar
+        context: Contexto de Airflow
+    """
+    with KedroSession.create(
+        project_path=project_path,
+        env='local'
+    ) as session:
+        session.run(pipeline_name=pipeline_name)
+        return f"✅ Pipeline {pipeline_name} ejecutado correctamente"
+
+
+# Configuración del DAG
+default_args = {
+    'owner': 'data-team',
+    'depends_on_past': False,
+    'start_date': datetime(2025, 1, 1),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 2,
+    'retry_delay': timedelta(minutes=5),
+}
+
+dag = DAG(
+    'hospital_mortality_kedro_nodes',
+    default_args=default_args,
+    description='Pipeline de mortalidad hospitalaria - Nodos individuales de Kedro',
+    schedule_interval='@daily',
+    catchup=False,
+    tags=['kedro', 'healthcare', 'modular']
+)
+
+# Crear tareas para cada nodo del pipeline
+# Fase 1: Limpieza de datos
+clean_df1 = PythonOperator(
+    task_id='clean_df1_columns',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'clean_df1_columns'},
+    dag=dag
+)
+
+clean_df2 = PythonOperator(
+    task_id='clean_df2_columns',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'clean_df2_columns'},
+    dag=dag
+)
+
+clean_df3 = PythonOperator(
+    task_id='clean_df3_columns',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'clean_df3_columns'},
+    dag=dag
+)
+
+clean_df4 = PythonOperator(
+    task_id='clean_df4_columns',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'clean_df4_columns'},
+    dag=dag
+)
+
+# Fase 2: Estandarización
+standardize_df1 = PythonOperator(
+    task_id='standardize_df1_keys',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'standardize_df1_keys'},
+    dag=dag
+)
+
+standardize_df2 = PythonOperator(
+    task_id='standardize_df2_keys',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'standardize_df2_keys'},
+    dag=dag
+)
+
+standardize_df3 = PythonOperator(
+    task_id='standardize_df3_keys',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'standardize_df3_keys'},
+    dag=dag
+)
+
+standardize_df4 = PythonOperator(
+    task_id='standardize_df4_keys',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'standardize_df4_keys'},
+    dag=dag
+)
+
+# Fase 3: Fusión de datasets
+merge_datasets_task = PythonOperator(
+    task_id='merge_hospital_datasets',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'merge_hospital_datasets'},
+    dag=dag
+)
+
+# Fase 4: Ingeniería de características
+create_age_cats = PythonOperator(
+    task_id='create_age_categories',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'create_age_categories'},
+    dag=dag
+)
+
+engineer_comorbidities = PythonOperator(
+    task_id='engineer_comorbidity_features',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'engineer_comorbidity_features'},
+    dag=dag
+)
+
+# Fase 5: Calidad y reporte
+generate_quality = PythonOperator(
+    task_id='generate_quality_report',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'generate_quality_report'},
+    dag=dag
+)
+
+create_plots = PythonOperator(
+    task_id='create_exploratory_analysis',
+    python_callable=run_kedro_node,
+    op_kwargs={'node_name': 'create_exploratory_analysis'},
+    dag=dag
+)
+
+# Definir dependencias del flujo
+# Limpieza en paralelo
+[clean_df1, clean_df2, clean_df3, clean_df4]
+
+# Estandarización después de limpieza
+clean_df1 >> standardize_df1
+clean_df2 >> standardize_df2
+clean_df3 >> standardize_df3
+clean_df4 >> standardize_df4
+
+# Merge después de todas las estandarizaciones
+[standardize_df1, standardize_df2, standardize_df3, standardize_df4] >> merge_datasets_task
+
+# Feature engineering secuencial
+merge_datasets_task >> create_age_cats >> engineer_comorbidities
+
+# Análisis en paralelo al final
+engineer_comorbidities >> [generate_quality, create_plots]

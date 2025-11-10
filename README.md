@@ -12,8 +12,8 @@ Este proyecto corresponde a la **Evaluación Parcial 1** de la asignatura **Fund
 
 ---
 ## Contenido Segunda entrega:
-- drive:
-- Video :
+- drive: https://drive.google.com/drive/folders/1emwbN-xzRBq476R7zzxcZQZuujv_exeZ?usp=drive_link
+- Video : https://drive.google.com/drive/folders/1rx7pUaHsv66XLQXiCz8H9UlVXtgT0tkY?usp=drive_link
 
 ---
 ## Requisitos
